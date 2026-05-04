@@ -57,19 +57,26 @@ function startDrawing(e) {
 
 // Continues the line as the mouse moves
 function draw(e) {
-  if (!isDrawing) return; // Stop if mouse isn't held down
+  if (!isDrawing) return;
+
+  // This ensures we are drawing exactly where the mouse is pointing
+  const rect = drawingCanvas.getBoundingClientRect();
+  const x = e.clientX - rect.left;
+  const y = e.clientY - rect.top;
+
+  ctx.lineWidth = 5;
+  ctx.lineCap = 'round';
+  ctx.strokeStyle = '#000000';
 
   ctx.beginPath();
-  // Move from the LAST known point
   ctx.moveTo(lastX, lastY);
-  // Get current position
-  const { x, y } = getMousePos(e);
-  // Connect them with a line
   ctx.lineTo(x, y);
-  ctx.stroke(); // Physically render the line on screen
-  
-  // Update the "last" position for the NEXT step of the move
+  ctx.stroke();
+
   [lastX, lastY] = [x, y];
+  
+  // Optional: Open your browser console (F12) to see if this pops up
+  // console.log("Drawing at: ", x, y); 
 }
 
 // Stops the drawing action

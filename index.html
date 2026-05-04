@@ -135,22 +135,8 @@
         ctx.fillStyle = "white";
         ctx.fillRect(0, 0, canvas.width, canvas.height);
 
-        function startGame() {
-            // Pick random photo
-            const randomImg = photoDatabase[Math.floor(Math.random() * photoDatabase.length)];
-            targetPhoto.src = randomImg + "?t=" + new Date().getTime(); // Anti-cache hack
-
-            // Reset UI
-            timeLeft = 30;
-            canDraw = true;
-            scoreDisplay.innerText = "Score: --";
-            clearCanvas();
-            startBtn.disabled = true;
 
             // Timer Loop
-To make sure everything works perfectly on GitHub Pages, I’ve combined the structure, the styling, and the game logic into a single, cohesive file. This prevents "file not found" errors and ensures your event listeners are perfectly synced with the HTML.
-
-Save this entire block as **`index.html`** (replacing everything you have currently) and push it to your repository.
 
 ```html
 <!DOCTYPE html>
@@ -295,21 +281,39 @@ Save this entire block as **`index.html`** (replacing everything you have curren
 
         // --- Game Logic ---
         function startGame() {
-            canDraw = true;
-            timeLeft = 30;
-            scoreTxt.innerText = "Score: --";
-            startBtn.disabled = true;
-            clearCanvas();
+    console.log("Start button clicked!"); // Check 1
 
-            timerId = setInterval(() => {
-                timeLeft--;
-                timerTxt.innerText = `Time: ${timeLeft}s`;
-                
-                if (timeLeft <= 0) {
-                    endGame();
-                }
-            }, 1000);
+    try {
+        canDraw = true;
+        timeLeft = 30;
+        scoreTxt.innerText = "Score: --";
+        startBtn.disabled = true;
+        
+        console.log("Variables reset, clearing canvas..."); // Check 2
+        clearCanvas();
+
+        // Safety check: ensure the image actually exists
+        if (!targetImg.src) {
+            console.error("No target image source found!");
         }
+
+        // Start the interval
+        if (timerId) clearInterval(timerId); // Clear any old timers
+        
+        timerId = setInterval(() => {
+            timeLeft--;
+            timerTxt.innerText = `Time: ${timeLeft}s`;
+            
+            if (timeLeft <= 0) {
+                console.log("Timer finished!"); // Check 3
+                endGame();
+            }
+        }, 1000);
+
+    } catch (error) {
+        console.error("Game failed to start:", error);
+    }
+}
 
         function endGame() {
             clearInterval(timerId);

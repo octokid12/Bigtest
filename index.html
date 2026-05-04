@@ -3,20 +3,21 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Sketch Matcher Game</title>
+    <title>Sketch Matcher Pro</title>
     <style>
         :root { --bg: #f4f4f9; --panel: #ffffff; --accent: #2563eb; }
-        body { font-family: sans-serif; background-color: var(--bg); display: flex; flex-direction: column; align-items: center; padding: 20px; }
+        body { font-family: system-ui, -apple-system, sans-serif; background-color: var(--bg); display: flex; flex-direction: column; align-items: center; padding: 20px; }
         .stats-bar { background: var(--panel); padding: 15px 30px; border-radius: 50px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); display: flex; gap: 40px; align-items: center; margin-bottom: 20px; }
         .play-area { display: flex; gap: 20px; flex-wrap: wrap; justify-content: center; }
         .panel { background: var(--panel); padding: 10px; border-radius: 12px; box-shadow: 0 10px 15px rgba(0,0,0,0.1); text-align: center; }
         canvas, #target-photo { width: 400px; height: 400px; border: 2px solid #e5e7eb; border-radius: 8px; background-color: white; display: block; }
         canvas { cursor: crosshair; touch-action: none; }
         .controls { margin-top: 25px; display: flex; gap: 15px; }
-        button { padding: 12px 24px; font-size: 16px; font-weight: 600; border: none; border-radius: 8px; cursor: pointer; color: white; }
+        button { padding: 12px 24px; font-size: 16px; font-weight: 600; border: none; border-radius: 8px; cursor: pointer; color: white; transition: opacity 0.2s; }
         #start-btn { background: #059669; }
         .clear-btn { background: #ef4444; }
-        button:disabled { background: #9ca3af; }
+        button:disabled { opacity: 0.5; cursor: not-allowed; }
+        h3 { margin: 10px 0; color: #374151; }
     </style>
 </head>
 <body>
@@ -50,7 +51,6 @@
         const scoreTxt = document.getElementById('score-display');
         const startBtn = document.getElementById('start-btn');
 
-        // State variables
         let isDrawing = false;
         let canDraw = false;
         let lastX = 0;
@@ -58,18 +58,15 @@
         let timeLeft = 30;
         let timerId = null;
 
-        // --- Initialization ---
         function initSettings() {
             ctx.strokeStyle = "black";
             ctx.lineWidth = 8;
             ctx.lineCap = "round";
             ctx.lineJoin = "round";
-            clearCanvas(); 
+            clearCanvas();
         }
 
-        // --- Game Logic ---
         function startGame() {
-            console.log("Game Starting...");
             canDraw = true;
             timeLeft = 30;
             scoreTxt.innerText = "Score: --";
@@ -80,7 +77,7 @@
 
             timerId = setInterval(() => {
                 timeLeft--;
-                timerTxt.innerText = `Time: ${timeLeft}s`;
+                timerTxt.innerText = "Time: " + timeLeft + "s";
                 if (timeLeft <= 0) {
                     endGame();
                 }
@@ -108,20 +105,21 @@
 
                 let diff = 0;
                 for (let i = 0; i < targetData.length; i += 4) {
-                    // Check brightness difference
+                    // Compare RGB values
                     diff += Math.abs(targetData[i] - playerData[i]);
+                    diff += Math.abs(targetData[i+1] - playerData[i+1]);
+                    diff += Math.abs(targetData[i+2] - playerData[i+2]);
                 }
 
-                const maxError = 255 * (targetData.length / 4);
+                const maxError = (255 * 3) * (targetData.length / 4);
                 let accuracy = 100 - (diff / maxError * 100);
-                scoreTxt.innerText = `Score: ${Math.max(0, Math.floor(accuracy))}%`;
+                scoreTxt.innerText = "Score: " + Math.max(0, Math.floor(accuracy)) + "%";
             } catch (e) {
-                console.error("Scoring error (likely Cross-Origin):", e);
+                console.error("Scoring error:", e);
                 scoreTxt.innerText = "Score: Error";
             }
         }
 
-        // --- Drawing Engine ---
         function getPos(e) {
             const rect = canvas.getBoundingClientRect();
             const clientX = e.touches ? e.touches[0].clientX : e.clientX;
@@ -156,7 +154,6 @@
             ctx.fillRect(0, 0, canvas.width, canvas.height);
         }
 
-        // --- Event Listeners ---
         canvas.addEventListener('mousedown', start);
         canvas.addEventListener('mousemove', draw);
         window.addEventListener('mouseup', stop);
@@ -165,7 +162,6 @@
         canvas.addEventListener('touchmove', (e) => { draw(e); e.preventDefault(); }, {passive: false});
         canvas.addEventListener('touchend', stop);
 
-        // Run setup
         initSettings();
     </script>
 </body>

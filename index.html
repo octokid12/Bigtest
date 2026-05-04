@@ -3,230 +3,20 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Sketch Matcher AI</title>
+    <title>Sketch Matcher Game</title>
     <style>
-        :root {
-            --bg: #f0f2f5;
-            --panel: #ffffff;
-            --accent: #2563eb;
-        }
-
-        body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background-color: var(--bg);
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            margin: 0;
-            padding: 20px;
-        }
-
-        .game-container {
-            max-width: 900px;
-            width: 100%;
-            text-align: center;
-        }
-
-        .stats-bar {
-            background: var(--panel);
-            padding: 20px;
-            border-radius: 12px;
-            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
-            margin-bottom: 20px;
-            display: flex;
-            justify-content: space-around;
-            align-items: center;
-        }
-
-        .play-area {
-            display: flex;
-            gap: 20px;
-            justify-content: center;
-            flex-wrap: wrap;
-        }
-
-        .panel {
-            background: var(--panel);
-            padding: 15px;
-            border-radius: 12px;
-            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
-        }
-
-        canvas, #target-photo {
-            width: 400px;
-            height: 400px;
-            border: 2px solid #333;
-            background-color: white;
-            display: block;
-        }
-
-        #target-photo {
-            object-fit: contain;
-        }
-
-        button {
-            padding: 12px 24px;
-            font-size: 16px;
-            font-weight: bold;
-            color: white;
-            background-color: var(--accent);
-            border: none;
-            border-radius: 8px;
-            cursor: pointer;
-            transition: transform 0.1s, background 0.2s;
-        }
-
-        button:active { transform: scale(0.95); }
-        button:disabled { background-color: #ccc; cursor: not-allowed; }
-
-        #score-display {
-            font-size: 1.5rem;
-            color: var(--accent);
-        }
-    </style>
-</head>
-<body>
-
-    <div class="game-container">
-        <h1>Sketch Matcher</h1>
-        
-        <div class="stats-bar">
-            <h2 id="timer">Time: 30s</h2>
-            <h2 id="score-display">Score: --</h2>
-            <button id="start-btn">START GAME</button>
-        </div>
-
-        <div class="play-area">
-            <div class="panel">
-                <h3>Target</h3>
-                <img id="target-photo" src="Assets/rad.jpg" alt="Reference">
-            </div>
-
-            <div class="panel">
-                <h3>Your Drawing</h3>
-                <canvas id="drawing-canvas" width="400" height="400"></canvas>
-            </div>
-        </div>
-
-        <div style="margin-top: 20px;">
-            <button onclick="clearCanvas()" style="background-color: #ef4444;">Clear Canvas</button>
-        </div>
-    </div>
-
-    <script>
-        const canvas = document.getElementById('drawing-canvas');
-        const ctx = canvas.getContext('2d', { willReadFrequently: true });
-        const targetPhoto = document.getElementById('target-photo');
-        const timerDisplay = document.getElementById('timer');
-        const scoreDisplay = document.getElementById('score-display');
-        const startBtn = document.getElementById('start-btn');
-
-        // DATABASE: Add your filenames here
-        const photoDatabase = ['Assets/rad.jpg']; 
-
-        let isDrawing = false;
-        let canDraw = false;
-        let lastX = 0;
-        let lastY = 0;
-        let timeLeft = 30;
-        let gameInterval;
-
-        // Initialize Canvas
-        ctx.fillStyle = "white";
-        ctx.fillRect(0, 0, canvas.width, canvas.height);
-
-
-            // Timer Loop
-
-```html
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Sketch Matcher Pro</title>
-    <style>
-        :root {
-            --bg: #f4f4f9;
-            --panel: #ffffff;
-            --accent: #2563eb;
-        }
-
-        body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background-color: var(--bg);
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            margin: 0;
-            padding: 20px;
-        }
-
-        .stats-bar {
-            background: var(--panel);
-            padding: 15px 30px;
-            border-radius: 50px;
-            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
-            display: flex;
-            gap: 40px;
-            align-items: center;
-            margin-bottom: 20px;
-        }
-
-        #timer { color: #d97706; min-width: 120px; }
-        #score-display { color: var(--accent); min-width: 120px; }
-
-        .play-area {
-            display: flex;
-            gap: 20px;
-            flex-wrap: wrap;
-            justify-content: center;
-        }
-
-        .panel {
-            background: var(--panel);
-            padding: 10px;
-            border-radius: 12px;
-            box-shadow: 0 10px 15px -3px rgba(0,0,0,0.1);
-            text-align: center;
-        }
-
-        canvas, #target-photo {
-            width: 400px;
-            height: 400px;
-            border: 2px solid #e5e7eb;
-            border-radius: 8px;
-            display: block;
-            background-color: white;
-        }
-
-        #target-photo { object-fit: contain; }
-
+        :root { --bg: #f4f4f9; --panel: #ffffff; --accent: #2563eb; }
+        body { font-family: sans-serif; background-color: var(--bg); display: flex; flex-direction: column; align-items: center; padding: 20px; }
+        .stats-bar { background: var(--panel); padding: 15px 30px; border-radius: 50px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); display: flex; gap: 40px; align-items: center; margin-bottom: 20px; }
+        .play-area { display: flex; gap: 20px; flex-wrap: wrap; justify-content: center; }
+        .panel { background: var(--panel); padding: 10px; border-radius: 12px; box-shadow: 0 10px 15px rgba(0,0,0,0.1); text-align: center; }
+        canvas, #target-photo { width: 400px; height: 400px; border: 2px solid #e5e7eb; border-radius: 8px; background-color: white; display: block; }
         canvas { cursor: crosshair; touch-action: none; }
-
-        .controls {
-            margin-top: 25px;
-            display: flex;
-            gap: 15px;
-        }
-
-        button {
-            padding: 12px 24px;
-            font-size: 16px;
-            font-weight: 600;
-            border: none;
-            border-radius: 8px;
-            cursor: pointer;
-            transition: transform 0.1s, background 0.2s;
-        }
-
-        #start-btn { background: #059669; color: white; }
-        #start-btn:hover { background: #047857; }
-        
-        .clear-btn { background: #ef4444; color: white; }
-        
-        button:active { transform: scale(0.95); }
-        button:disabled { background: #9ca3af; cursor: not-allowed; }
+        .controls { margin-top: 25px; display: flex; gap: 15px; }
+        button { padding: 12px 24px; font-size: 16px; font-weight: 600; border: none; border-radius: 8px; cursor: pointer; color: white; }
+        #start-btn { background: #059669; }
+        .clear-btn { background: #ef4444; }
+        button:disabled { background: #9ca3af; }
     </style>
 </head>
 <body>
@@ -241,7 +31,6 @@
             <h3>Reference</h3>
             <img id="target-photo" src="assets/rad.jpg" alt="Target Image">
         </div>
-
         <div class="panel">
             <h3>Your Sketch</h3>
             <canvas id="drawing-canvas" width="400" height="400"></canvas>
@@ -261,6 +50,7 @@
         const scoreTxt = document.getElementById('score-display');
         const startBtn = document.getElementById('start-btn');
 
+        // State variables
         let isDrawing = false;
         let canDraw = false;
         let lastX = 0;
@@ -269,51 +59,33 @@
         let timerId = null;
 
         // --- Initialization ---
-        function initCanvas() {
-            ctx.fillStyle = "white";
-            ctx.fillRect(0, 0, canvas.width, canvas.height);
+        function initSettings() {
             ctx.strokeStyle = "black";
             ctx.lineWidth = 8;
             ctx.lineCap = "round";
             ctx.lineJoin = "round";
+            clearCanvas(); 
         }
-        initCanvas();
 
         // --- Game Logic ---
         function startGame() {
-    console.log("Start button clicked!"); // Check 1
+            console.log("Game Starting...");
+            canDraw = true;
+            timeLeft = 30;
+            scoreTxt.innerText = "Score: --";
+            startBtn.disabled = true;
+            clearCanvas();
 
-    try {
-        canDraw = true;
-        timeLeft = 30;
-        scoreTxt.innerText = "Score: --";
-        startBtn.disabled = true;
-        
-        console.log("Variables reset, clearing canvas..."); // Check 2
-        clearCanvas();
+            if (timerId) clearInterval(timerId);
 
-        // Safety check: ensure the image actually exists
-        if (!targetImg.src) {
-            console.error("No target image source found!");
+            timerId = setInterval(() => {
+                timeLeft--;
+                timerTxt.innerText = `Time: ${timeLeft}s`;
+                if (timeLeft <= 0) {
+                    endGame();
+                }
+            }, 1000);
         }
-
-        // Start the interval
-        if (timerId) clearInterval(timerId); // Clear any old timers
-        
-        timerId = setInterval(() => {
-            timeLeft--;
-            timerTxt.innerText = `Time: ${timeLeft}s`;
-            
-            if (timeLeft <= 0) {
-                console.log("Timer finished!"); // Check 3
-                endGame();
-            }
-        }, 1000);
-
-    } catch (error) {
-        console.error("Game failed to start:", error);
-    }
-}
 
         function endGame() {
             clearInterval(timerId);
@@ -324,34 +96,39 @@
         }
 
         function calculateScore() {
-            // 1. Get Target Data
             const tCanvas = document.createElement('canvas');
             tCanvas.width = 400;
             tCanvas.height = 400;
             const tCtx = tCanvas.getContext('2d');
-            tCtx.drawImage(targetImg, 0, 0, 400, 400);
             
-            const targetData = tCtx.getImageData(0, 0, 400, 400).data;
-            const playerData = ctx.getImageData(0, 0, 400, 400).data;
+            try {
+                tCtx.drawImage(targetImg, 0, 0, 400, 400);
+                const targetData = tCtx.getImageData(0, 0, 400, 400).data;
+                const playerData = ctx.getImageData(0, 0, 400, 400).data;
 
-            let diff = 0;
-            // Loop through pixels (R, G, B, A) - we only check R channel for B/W speed
-            for (let i = 0; i < targetData.length; i += 4) {
-                diff += Math.abs(targetData[i] - playerData[i]);
+                let diff = 0;
+                for (let i = 0; i < targetData.length; i += 4) {
+                    // Check brightness difference
+                    diff += Math.abs(targetData[i] - playerData[i]);
+                }
+
+                const maxError = 255 * (targetData.length / 4);
+                let accuracy = 100 - (diff / maxError * 100);
+                scoreTxt.innerText = `Score: ${Math.max(0, Math.floor(accuracy))}%`;
+            } catch (e) {
+                console.error("Scoring error (likely Cross-Origin):", e);
+                scoreTxt.innerText = "Score: Error";
             }
-
-            const maxError = 255 * (targetData.length / 4);
-            const accuracy = 100 - (diff / maxError * 100);
-            
-            scoreTxt.innerText = `Score: ${Math.floor(accuracy)}%`;
         }
 
         // --- Drawing Engine ---
         function getPos(e) {
             const rect = canvas.getBoundingClientRect();
+            const clientX = e.touches ? e.touches[0].clientX : e.clientX;
+            const clientY = e.touches ? e.touches[0].clientY : e.clientY;
             return {
-                x: (e.clientX || e.touches[0].clientX) - rect.left,
-                y: (e.clientY || e.touches[0].clientY) - rect.top
+                x: clientX - rect.left,
+                y: clientY - rect.top
             };
         }
 
@@ -384,11 +161,12 @@
         canvas.addEventListener('mousemove', draw);
         window.addEventListener('mouseup', stop);
 
-        // Touch support for mobile
-        canvas.addEventListener('touchstart', (e) => { e.preventDefault(); start(e); });
-        canvas.addEventListener('touchmove', (e) => { e.preventDefault(); draw(e); });
+        canvas.addEventListener('touchstart', (e) => { start(e); e.preventDefault(); }, {passive: false});
+        canvas.addEventListener('touchmove', (e) => { draw(e); e.preventDefault(); }, {passive: false});
         canvas.addEventListener('touchend', stop);
 
+        // Run setup
+        initSettings();
     </script>
 </body>
 </html>

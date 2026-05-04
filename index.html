@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sketch Matcher AI</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+    <div class="game-container">
+        <h1>Sketch Matcher</h1>
+        
+        <div class="stats-bar">
+            <span id="timer">Time: 60s</span>
+            <button id="start-btn" onclick="startGame()">Start Challenge</button>
+        </div>
+
+        <div class="play-area">
+            <!-- Left Side: The Reference Image -->
+            <div class="panel">
+                <h3>Target</h3>
+                <div id="target-container">
+                    <img id="target-photo" src="" alt="Click Start to begin">
+                </div>
+            </div>
+
+            <!-- Right Side: The Player's Canvas -->
+            <div class="panel">
+                <h3>Your Drawing</h3>
+                <canvas id="drawing-canvas" width="400" height="400"></canvas>
+            </div>
+        </div>
+
+        <div class="controls">
+            <button onclick="clearCanvas()">Clear Canvas</button>
+            <p id="score-display"></p>
+        </div>
+    </div>
+
+    <script src="script.js"></script>
+</body>
+</html>

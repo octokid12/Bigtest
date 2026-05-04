@@ -1,108 +1,89 @@
-// -------------------------------------------------------------------
-// 1. GAME SETUP & CONFIGURATION
-// -------------------------------------------------------------------
 const drawingCanvas = document.getElementById('drawing-canvas');
 const targetPhoto = document.getElementById('target-photo');
+const timerDisplay = document.getElementById('timer');
+const scoreDisplay = document.getElementById('score-display');
 const ctx = drawingCanvas.getContext('2d');
 
-// Game State Variables
-let isDrawing = false; // Tracks if mouse button is held down
-let lastX = 0; // Where the line started
-let lastY = 0;
+let isDrawing = false;
+let canDraw = false; // Game starts locked
+let timeLeft = 30;
+let gameInterval;
 
-// Set the line style (Must be black, matching the prompt)
-ctx.strokeStyle = '#000000'; // Pure Black
-ctx.lineJoin = 'round'; // Smooths corners
-ctx.lineCap = 'round'; // Smooths line ends
-ctx.lineWidth = 5; // Default thickness
+// Initialize Canvas
+ctx.fillStyle = "white";
+ctx.fillRect(0, 0, 400, 400);
 
-// -------------------------------------------------------------------
-// 2. LOADING THE REFERENCE IMAGE
-// -------------------------------------------------------------------
-
-// For now, we will manually trigger this function when the page loads.
-// Later, this will be tied to the "Start" button and pick a random image.
-function loadReferenceImage() {
-  const imageUrl = 'Assets/rad.jpg'; // Pointing to your test asset
-  
-  // Update the UI: Set the source of the <img> element
-  targetPhoto.src = imageUrl;
-  
-  // Crucial: Clear the canvas with a SOLID WHITE background.
-  // By default, canvas is transparent. Grading fails if one is transparent and one is white.
-  ctx.fillStyle = 'white';
-  ctx.fillRect(0, 0, drawingCanvas.width, drawingCanvas.height);
+function startGame() {
+    // 1. Reset Game State
+    timeLeft = 30;
+    canDraw = true;
+    scoreDisplay.innerText = "Score: --";
+    clearCanvas();
+    
+    // 2. Start Timer
+    clearInterval(gameInterval);
+    gameInterval = setInterval(() => {
+        timeLeft--;
+        timerDisplay.innerText = `Time: ${timeLeft}s`;
+        
+        if (timeLeft <= 0) {
+            endGame();
+        }
+    }, 1000);
 }
 
-// -------------------------------------------------------------------
-// 3. THE DRAWING ENGINE (MOUSE TRACKING)
-// -------------------------------------------------------------------
-
-// Function to calculate mouse position relative to the canvas
-function getMousePos(e) {
-  const rect = drawingCanvas.getBoundingClientRect();
-  return {
-    x: e.clientX - rect.left,
-    y: e.clientY - rect.top
-  };
+function endGame() {
+    clearInterval(gameInterval);
+    canDraw = false;
+    timerDisplay.innerText = "TIME'S UP!";
+    calculateScore();
 }
 
-// Starts the drawing line
-function startDrawing(e) {
-  isDrawing = true;
-  // Grab the starting coordinates
-  const { x, y } = getMousePos(e);
-  [lastX, lastY] = [x, y];
+// THE GRADING ENGINE
+function calculateScore() {
+    // Create a temporary canvas to read the target image pixels
+    const tempCanvas = document.createElement('canvas');
+    tempCanvas.width = 400;
+    tempCanvas.height = 400;
+    const tCtx = tempCanvas.getContext('2d');
+    tCtx.drawImage(targetPhoto, 0, 0, 400, 400);
+
+    const targetData = tCtx.getImageData(0, 0, 400, 400).data;
+    const playerData = ctx.getImageData(0, 0, 400, 400).data;
+
+    let totalDiff = 0;
+    // Compare every 4th value (The Red channel is enough for black/white)
+    for (let i = 0; i < targetData.length; i += 4) {
+        let diff = Math.abs(targetData[i] - playerData[i]);
+        totalDiff += diff;
+    }
+
+    // Calculate percentage (0 to 100)
+    // 255 * pixels is the maximum possible difference
+    const maxDiff = 255 * (targetData.length / 4);
+    const score = Math.max(0, 100 - (totalDiff / maxDiff * 100));
+    
+    scoreDisplay.innerText = `Score: ${Math.floor(score)}%`;
 }
 
-// Continues the line as the mouse moves
+// Update your drawing function to check 'canDraw'
 function draw(e) {
-  if (!isDrawing) return;
+    if (!isDrawing || !canDraw) return;
 
-  // This ensures we are drawing exactly where the mouse is pointing
-  const rect = drawingCanvas.getBoundingClientRect();
-  const x = e.clientX - rect.left;
-  const y = e.clientY - rect.top;
+    const rect = drawingCanvas.getBoundingClientRect();
+    const x = e.clientX - rect.left;
+    const y = e.clientY - rect.top;
 
-  ctx.lineWidth = 5;
-  ctx.lineCap = 'round';
-  ctx.strokeStyle = '#000000';
+    ctx.lineWidth = 10; // Thicker lines help with scoring
+    ctx.lineCap = 'round';
+    ctx.strokeStyle = '#000000';
 
-  ctx.beginPath();
-  ctx.moveTo(lastX, lastY);
-  ctx.lineTo(x, y);
-  ctx.stroke();
+    ctx.beginPath();
+    ctx.moveTo(lastX, lastY);
+    ctx.lineTo(x, y);
+    ctx.stroke();
 
-  [lastX, lastY] = [x, y];
-  
-  // Optional: Open your browser console (F12) to see if this pops up
-  // console.log("Drawing at: ", x, y); 
+    [lastX, lastY] = [x, y];
 }
 
-// Stops the drawing action
-function stopDrawing() {
-  isDrawing = false;
-}
-
-// -------------------------------------------------------------------
-// 4. PLAYER CONTROLS
-// -------------------------------------------------------------------
-function clearCanvas() {
-  // Reset the canvas to blank white
-  ctx.fillStyle = 'white';
-  ctx.fillRect(0, 0, drawingCanvas.width, drawingCanvas.height);
-}
-
-// -------------------------------------------------------------------
-// 5. EVENT LISTENERS & INITIALIZATION
-// -------------------------------------------------------------------
-
-// Monitor the mouse actions ON THE CANVAS
-drawingCanvas.addEventListener('mousedown', startDrawing);
-drawingCanvas.addEventListener('mousemove', draw);
-drawingCanvas.addEventListener('mouseup', stopDrawing);
-drawingCanvas.addEventListener('mouseout', stopDrawing); // Stops drawing if mouse leaves canvas
-
-// Start the sequence! When the page loads, prepare the environment.
-// Load the specific image first to test the UI link.
-window.onload = loadReferenceImage;
+// ... Keep your startDrawing, stopDrawing, and clearCanvas functions from before ...

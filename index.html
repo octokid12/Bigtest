@@ -144,7 +144,7 @@
                     
                     // Check if Player is Dark
                     const pAvg = (pData[i] + pData[i+1] + pData[i+2]) / 3;
-                    const isPDark = pAvg < 160;
+                    const isPDark = pAvg < 120;
 
                     if (isTDark) targetInk++;
                     if (isPDark) playerInk++;
@@ -157,7 +157,7 @@
                 // Ink Ratio: Prevent scribbling the whole screen to win
                 const inkRatio = playerInk / targetInk;
                 let penalty = 1.0;
-                if (inkRatio > 1.2) penalty = Math.max(0.1, 1 - (inkRatio - 1.2));
+                if (inkRatio > 2) penalty = Math.max(0.1, 1 - (inkRatio - 1.2));
                 else if (inkRatio < 0.8) penalty = Math.max(0.1, inkRatio + 0.2);
 
                 const finalScore = Math.min(100, Math.max(0, Math.floor(coverage * penalty)));

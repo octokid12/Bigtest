@@ -23,7 +23,7 @@ ctx.lineWidth = 5; // Default thickness
 // For now, we will manually trigger this function when the page loads.
 // Later, this will be tied to the "Start" button and pick a random image.
 function loadReferenceImage() {
-  const imageUrl = 'Assets/rad.jpg'; // Pointing to your test asset
+  const imageUrl = 'Bigtest/Assets/rad.jpg'; // Pointing to your test asset
   
   // Update the UI: Set the source of the <img> element
   targetPhoto.src = imageUrl;

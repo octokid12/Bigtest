@@ -17,3 +17,12 @@ canvas {
     border: 2px solid #ccc;
     object-fit: contain;
 }
+
+canvas {
+    border: 2px solid #000;
+    background-color: #ffffff;
+    display: block;
+    touch-action: none; /* Prevents scrolling on mobile while drawing */
+    position: relative;
+    z-index: 10; /* Brings canvas to the front */
+}

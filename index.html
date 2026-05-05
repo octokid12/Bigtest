@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Memory Trace Challenge</title>
+    <title>Memory Trace: Fixed Visibility</title>
     <style>
         :root { --bg: #f0f2f5; --panel: #ffffff; --accent: #2563eb; --success: #059669; }
         body { font-family: system-ui, sans-serif; background-color: var(--bg); display: flex; flex-direction: column; align-items: center; padding: 20px; margin: 0; }
@@ -11,12 +11,11 @@
         .stats-bar { background: var(--panel); padding: 15px 30px; border-radius: 50px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); display: flex; gap: 40px; align-items: center; margin-bottom: 20px; position: sticky; top: 10px; z-index: 10; }
         #timer, #score-display { width: 120px; margin: 0; text-align: center; }
 
-        /* The New Stacked Play Area */
         .game-wrapper {
             position: relative;
             width: 400px;
             height: 400px;
-            background: white;
+            background: white; /* The "paper" color */
             border: 4px solid #333;
             border-radius: 12px;
             overflow: hidden;
@@ -30,19 +29,17 @@
             width: 400px;
             height: 400px;
             object-fit: contain;
-            z-index: 1;
-            /* Transition for the fade effect */
-            transition: opacity 30s linear; 
+            z-index: 1; /* Behind the canvas */
             opacity: 0;
-            pointer-events: none; /* Allows drawing "through" the image */
+            pointer-events: none;
         }
 
         canvas {
             position: absolute;
             top: 0;
             left: 0;
-            z-index: 2;
-            background: transparent; /* Must be transparent to see the image behind */
+            z-index: 2; /* On top of the image */
+            background: transparent; /* Allows us to see through to the image */
             cursor: crosshair;
             touch-action: none;
         }
@@ -86,13 +83,12 @@
     </div>
 
     <div id="overlay-screen">
-        <h1 id="overlay-msg">MEMORY CHECK</h1>
+        <h1 id="overlay-msg">RESULTS</h1>
         <div class="stack-container">
             <canvas id="overlay-target-canvas" width="400" height="400"></canvas>
             <canvas id="overlay-heat-canvas" width="400" height="400"></canvas>
         </div>
         <h2 id="overlay-score">Accuracy: --</h2>
-        <p>Saving results...</p>
     </div>
 
     <script>
@@ -113,23 +109,23 @@
             ctx.lineWidth = 6;
             ctx.lineCap = "round";
             ctx.lineJoin = "round";
-            clearCanvas();
         }
 
         function startGame() {
             canDraw = true; timeLeft = 30;
             scoreTxt.innerText = "Score: --";
             startBtn.disabled = true;
-            clearCanvas();
-
-            // Setup Fading Effect
-            targetImg.style.transition = "none"; // Reset transition
-            targetImg.style.opacity = "1"; // Show image
             
-            // Trigger transition on next frame
+            // 1. Clear everything for a fresh start
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+            // 2. Setup Fading Image
+            targetImg.style.transition = "none";
+            targetImg.style.opacity = "1"; // Fully visible at start
+            
             setTimeout(() => {
                 targetImg.style.transition = "opacity 30s linear";
-                targetImg.style.opacity = "0"; // Start fading to nothing
+                targetImg.style.opacity = "0"; // Fades over the course of the timer
             }, 50);
 
             if (timerId) clearInterval(timerId);
@@ -145,11 +141,20 @@
             canDraw = false;
             startBtn.disabled = false;
             timerTxt.innerText = "FINISHED!";
-            targetImg.style.opacity = "0"; // Ensure it's hidden
             processResults();
         }
 
         function processResults() {
+            // Create a temporary grading canvas to turn the transparent sketch into white + black
+            const gradingCanvas = document.createElement('canvas');
+            gradingCanvas.width = 400; gradingCanvas.height = 400;
+            const gCtx = gradingCanvas.getContext('2d');
+            
+            // Fill background with white, then draw player's lines on top
+            gCtx.fillStyle = "white";
+            gCtx.fillRect(0, 0, 400, 400);
+            gCtx.drawImage(canvas, 0, 0);
+
             const tCanvas = document.getElementById('overlay-target-canvas');
             const hCanvas = document.getElementById('overlay-heat-canvas');
             const tCtx = tCanvas.getContext('2d');
@@ -158,7 +163,7 @@
             tCtx.drawImage(targetImg, 0, 0, 400, 400);
             const tDataObj = tCtx.getImageData(0, 0, 400, 400);
             const tPixels = tDataObj.data;
-            const pPixels = ctx.getImageData(0, 0, 400, 400).data;
+            const pPixels = gCtx.getImageData(0, 0, 400, 400).data;
             const hDataObj = hCtx.createImageData(400, 400);
             const hPixels = hDataObj.data;
 
@@ -201,6 +206,7 @@
             document.getElementById('overlay-score').innerText = "Accuracy: " + finalScore + "%";
             document.getElementById('overlay-screen').style.display = "flex";
 
+            // Gallery update
             const item = document.createElement('div');
             item.className = 'gallery-item';
             const tgCanvas = document.createElement('canvas');
@@ -209,7 +215,6 @@
             tgCtx.fillStyle = "white"; tgCtx.fillRect(0,0,400,400);
             tgCtx.drawImage(tCanvas, 0, 0);
             tgCtx.drawImage(hCanvas, 0, 0);
-            
             item.innerHTML = `<img src="${tgCanvas.toDataURL()}"><p>${finalScore}% Match</p>`;
             gallery.prepend(item);
 
@@ -230,12 +235,7 @@
             ctx.beginPath(); ctx.moveTo(lastX, lastY); ctx.lineTo(pos.x, pos.y); ctx.stroke();
             [lastX, lastY] = [pos.x, pos.y];
         }
-        function clearCanvas() { 
-            ctx.clearRect(0, 0, canvas.width, canvas.height);
-            // Since we need it for scoring, let's fill it with white instead of clearing to transparency
-            ctx.fillStyle = "white";
-            ctx.fillRect(0, 0, canvas.width, canvas.height);
-        }
+        function clearCanvas() { ctx.clearRect(0, 0, canvas.width, canvas.height); }
 
         canvas.addEventListener('mousedown', start);
         canvas.addEventListener('mousemove', draw);

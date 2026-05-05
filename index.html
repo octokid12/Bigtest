@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Memory Trace: Fixed Visibility</title>
+    <title>Memory Trace: Precision Edition</title>
     <style>
         :root { --bg: #f0f2f5; --panel: #ffffff; --accent: #2563eb; --success: #059669; }
         body { font-family: system-ui, sans-serif; background-color: var(--bg); display: flex; flex-direction: column; align-items: center; padding: 20px; margin: 0; }
@@ -15,7 +15,7 @@
             position: relative;
             width: 400px;
             height: 400px;
-            background: white; /* The "paper" color */
+            background: white;
             border: 4px solid #333;
             border-radius: 12px;
             overflow: hidden;
@@ -29,19 +29,21 @@
             width: 400px;
             height: 400px;
             object-fit: contain;
-            z-index: 1; /* Behind the canvas */
+            z-index: 1;
             opacity: 0;
             pointer-events: none;
+            /* Fade duration set in JS for dynamic control */
         }
 
         canvas {
             position: absolute;
             top: 0;
             left: 0;
-            z-index: 2; /* On top of the image */
-            background: transparent; /* Allows us to see through to the image */
+            z-index: 2;
+            background: transparent;
             cursor: crosshair;
             touch-action: none;
+            display: block;
         }
 
         .controls { margin: 25px 0; display: flex; gap: 15px; }
@@ -104,6 +106,9 @@
         let lastX = 0, lastY = 0;
         let timeLeft = 30, timerId = null;
 
+        // Configuration
+        const FADE_SPEED = 10; // Image disappears in 10 seconds
+
         function init() {
             ctx.strokeStyle = "black";
             ctx.lineWidth = 6;
@@ -116,16 +121,15 @@
             scoreTxt.innerText = "Score: --";
             startBtn.disabled = true;
             
-            // 1. Clear everything for a fresh start
             ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-            // 2. Setup Fading Image
+            // Handle Fading
             targetImg.style.transition = "none";
-            targetImg.style.opacity = "1"; // Fully visible at start
+            targetImg.style.opacity = "1"; 
             
             setTimeout(() => {
-                targetImg.style.transition = "opacity 30s linear";
-                targetImg.style.opacity = "0"; // Fades over the course of the timer
+                targetImg.style.transition = `opacity ${FADE_SPEED}s linear`;
+                targetImg.style.opacity = "0"; 
             }, 50);
 
             if (timerId) clearInterval(timerId);
@@ -145,12 +149,9 @@
         }
 
         function processResults() {
-            // Create a temporary grading canvas to turn the transparent sketch into white + black
             const gradingCanvas = document.createElement('canvas');
             gradingCanvas.width = 400; gradingCanvas.height = 400;
             const gCtx = gradingCanvas.getContext('2d');
-            
-            // Fill background with white, then draw player's lines on top
             gCtx.fillStyle = "white";
             gCtx.fillRect(0, 0, 400, 400);
             gCtx.drawImage(canvas, 0, 0);
@@ -206,7 +207,6 @@
             document.getElementById('overlay-score').innerText = "Accuracy: " + finalScore + "%";
             document.getElementById('overlay-screen').style.display = "flex";
 
-            // Gallery update
             const item = document.createElement('div');
             item.className = 'gallery-item';
             const tgCanvas = document.createElement('canvas');
@@ -221,28 +221,49 @@
             setTimeout(() => { document.getElementById('overlay-screen').style.display = "none"; }, 5000);
         }
 
+        // IMPROVED COORDINATE MATH
         function getPos(e) {
             const rect = canvas.getBoundingClientRect();
-            const clientX = e.touches ? e.touches[0].clientX : e.clientX;
-            const clientY = e.touches ? e.touches[0].clientY : e.clientY;
-            return { x: clientX - rect.left, y: clientY - rect.top };
+            // Use clientX/Y but subtract the EXACT top/left of the canvas box
+            const x = (e.touches ? e.touches[0].clientX : e.clientX) - rect.left;
+            const y = (e.touches ? e.touches[0].clientY : e.clientY) - rect.top;
+            
+            // Scalability fix: account for CSS scaling if the canvas is stretched
+            const scaleX = canvas.width / rect.width;
+            const scaleY = canvas.height / rect.height;
+            
+            return { x: x * scaleX, y: y * scaleY };
         }
 
-        function start(e) { if (!canDraw) return; isDrawing = true; const pos = getPos(e); [lastX, lastY] = [pos.x, pos.y]; }
+        function start(e) { 
+            if (!canDraw) return; 
+            isDrawing = true; 
+            const pos = getPos(e); 
+            [lastX, lastY] = [pos.x, pos.y]; 
+        }
+
         function draw(e) {
             if (!isDrawing || !canDraw) return;
             const pos = getPos(e);
-            ctx.beginPath(); ctx.moveTo(lastX, lastY); ctx.lineTo(pos.x, pos.y); ctx.stroke();
+            ctx.beginPath(); 
+            ctx.moveTo(lastX, lastY); 
+            ctx.lineTo(pos.x, pos.y); 
+            ctx.stroke();
             [lastX, lastY] = [pos.x, pos.y];
+            // Prevent scrolling while drawing on mobile
+            if(e.touches) e.preventDefault();
         }
+
         function clearCanvas() { ctx.clearRect(0, 0, canvas.width, canvas.height); }
 
         canvas.addEventListener('mousedown', start);
         canvas.addEventListener('mousemove', draw);
         window.addEventListener('mouseup', () => isDrawing = false);
-        canvas.addEventListener('touchstart', (e) => { start(e); e.preventDefault(); }, {passive: false});
-        canvas.addEventListener('touchmove', (e) => { draw(e); e.preventDefault(); }, {passive: false});
+        
+        canvas.addEventListener('touchstart', start, {passive: false});
+        canvas.addEventListener('touchmove', draw, {passive: false});
         canvas.addEventListener('touchend', () => isDrawing = false);
+        
         init();
     </script>
 </body>

@@ -220,7 +220,7 @@
 
             // --- Penalized Scoring Math ---
             let baseAccuracy = (correctHits / Math.max(1, targetInkPixels)) * 100;
-            let penalty = (strayPixels / Math.max(1, targetInkPixels)) * 50; 
+            let penalty = (strayPixels / Math.max(1, targetInkPixels)) * 25; 
             const finalScore = Math.floor(Math.max(0, baseAccuracy - penalty));
             
             showGrade(finalScore);

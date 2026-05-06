@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Memory Trace: Hardcore Arcade</title>
     <style>
-        :root { --bg: #0f172a; --panel: #1e293b; --accent: #38bdf8; --danger: #ef4444; --success: #22c55e; }
+        :root { --bg: #0f172a; --panel: #1e293b; --accent: #f542ec; --danger: #ef4444; --success: #22c55e; }
         body { font-family: 'Segoe UI', system-ui, sans-serif; background-color: var(--bg); color: white; display: flex; flex-direction: column; align-items: center; padding: 20px; margin: 0; }
         
         /* Stats Header */
@@ -220,7 +220,7 @@
 
             // --- Penalized Scoring Math ---
             let baseAccuracy = (correctHits / Math.max(1, targetInkPixels)) * 100;
-            let penalty = (strayPixels / Math.max(1, targetInkPixels)) * 25; 
+            let penalty = (strayPixels / Math.max(1, targetInkPixels)) * 35; 
             const finalScore = Math.floor(Math.max(0, baseAccuracy - penalty));
             
             showGrade(finalScore);
@@ -236,10 +236,10 @@
                 document.getElementById('grade-title').style.color = "var(--danger)";
                 document.getElementById('continue-btn').onclick = () => {
                     overlay.style.display = "none";
-                    gameOver(`Minimum ${targetAccuracy}% required. You scored ${score}%`);
+                    gameOver(`you FAIL!!!!!!! Minimum ${targetAccuracy}% required. You scored ${score}%`);
                 };
             } else {
-                document.getElementById('grade-title').innerText = "CLEARED!";
+                document.getElementById('grade-title').innerText = "CLEARED!!!";
                 document.getElementById('grade-title').style.color = "var(--success)";
                 saveToGallery(score);
                 photosCopied++;

@@ -3,12 +3,12 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Memory Trace: Arcade Survival</title>
+    <title>Memory Trace: Hardcore Arcade</title>
     <style>
         :root { --bg: #0f172a; --panel: #1e293b; --accent: #38bdf8; --danger: #ef4444; --success: #22c55e; }
         body { font-family: 'Segoe UI', system-ui, sans-serif; background-color: var(--bg); color: white; display: flex; flex-direction: column; align-items: center; padding: 20px; margin: 0; }
         
-        /* Layout & Stats */
+        /* Stats Header */
         .stats-bar { background: var(--panel); padding: 15px 40px; border-radius: 12px; box-shadow: 0 4px 20px rgba(0,0,0,0.4); display: flex; gap: 30px; align-items: center; margin-bottom: 20px; border: 1px solid #334155; }
         .stat-item { text-align: center; min-width: 100px; }
         .stat-label { font-size: 0.7rem; text-transform: uppercase; color: #94a3b8; margin-bottom: 4px; }
@@ -18,7 +18,6 @@
         .game-wrapper {
             position: relative; width: 400px; height: 400px; background: white;
             border: 4px solid var(--accent); border-radius: 12px; overflow: hidden;
-            box-shadow: 0 0 30px rgba(56, 189, 248, 0.2);
         }
         #target-photo {
             position: absolute; top: 0; left: 0; width: 400px; height: 400px;
@@ -34,10 +33,10 @@
         button:disabled { background: #475569; cursor: not-allowed; opacity: 0.5; }
         .clear-btn { background: #64748b; padding: 14px 20px; }
 
-        /* Results Overlay */
+        /* Overlays */
         #grade-overlay, #game-over-screen {
             position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-            background: rgba(15, 23, 42, 0.95); z-index: 500;
+            background: rgba(15, 23, 42, 0.96); z-index: 500;
             display: none; flex-direction: column; justify-content: center; align-items: center; text-align: center;
         }
         .preview-stack { position: relative; width: 400px; height: 400px; background: white; border: 4px solid white; border-radius: 8px; margin-bottom: 20px; }
@@ -54,8 +53,8 @@
 
     <div class="stats-bar">
         <div class="stat-item"><div class="stat-label">Time</div><p id="timer" class="stat-value">--</p></div>
-        <div class="stat-item"><div class="stat-label">Target</div><p id="target-acc-display" class="stat-value">20%</p></div>
-        <div class="stat-item"><div class="stat-label">Cleared</div><p id="count-display" class="stat-value">0</p></div>
+        <div class="stat-item"><div class="stat-label">Min Accuracy</div><p id="target-acc-display" class="stat-value">15%</p></div>
+        <div class="stat-item"><div class="stat-label">Photos Done</div><p id="count-display" class="stat-value">0</p></div>
     </div>
 
     <div class="game-wrapper">
@@ -68,32 +67,31 @@
         <button class="clear-btn" onclick="clearCanvas()">CLEAR</button>
     </div>
 
-    <!-- Grade Overlay -->
     <div id="grade-overlay">
         <h2 id="grade-title">RESULTS</h2>
         <div class="preview-stack">
             <canvas id="res-target-canvas" width="400" height="400"></canvas>
             <canvas id="res-heat-canvas" width="400" height="400"></canvas>
         </div>
-        <h2 id="grade-percent" style="color: var(--accent); font-size: 2.5rem; margin: 10px 0;">0%</h2>
+        <p style="margin:0; color:#94a3b8;">Accuracy - Penalty</p>
+        <h2 id="grade-percent" style="color: var(--accent); font-size: 3rem; margin: 5px 0;">0%</h2>
         <button id="continue-btn">CONTINUE</button>
     </div>
 
-    <!-- Game Over Screen -->
     <div id="game-over-screen">
         <h1 style="font-size: 4rem; color: var(--danger); margin: 0;">GAME OVER</h1>
         <p id="fail-message" style="color: #94a3b8; font-size: 1.2rem;"></p>
         <div id="final-stats-text" style="font-size: 1.5rem; margin: 20px 0; background: var(--panel); padding: 20px; border-radius: 12px;"></div>
-        <button onclick="location.reload()">TRY AGAIN</button>
+        <button onclick="location.reload()">RESTART SESSION</button>
     </div>
 
     <div id="gallery-section">
-        <h3>Trace Gallery</h3>
+        <h3>Success History</h3>
         <div id="gallery-container"></div>
     </div>
 
     <script>
-        // --- PHOTO DATABASE ---
+        // --- DATABASE ---
         const PHOTO_DB = [
             "Assets/spoon.jpg",
             "Assets/money.png",
@@ -109,7 +107,8 @@
         
         let isDrawing = false, canDraw = false, timerId = null;
         let photosCopied = 0, totalAccuracyEarned = 0;
-        let targetAccuracy = 20, timeAllowed = 30;
+        let targetAccuracy = 15; // Lowered starting target due to penalties
+        let timeAllowed = 30;
         let lastX = 0, lastY = 0;
         const FADE_SPEED = 10;
 
@@ -120,7 +119,6 @@
             ctx.lineJoin = "round";
         }
 
-        // --- ASPECT RATIO CORRECTION ---
         function getContainOffsets(img, cw, ch) {
             const imgRatio = img.naturalWidth / img.naturalHeight;
             const conRatio = cw / ch;
@@ -144,7 +142,6 @@
             canDraw = true;
             actionBtn.disabled = true;
             ctx.clearRect(0, 0, canvas.width, canvas.height);
-            
             targetImg.src = PHOTO_DB[Math.floor(Math.random() * PHOTO_DB.length)];
 
             if (photosCopied > 0 && photosCopied % 4 === 0) {
@@ -193,7 +190,6 @@
             tCtx.fillStyle = "white"; tCtx.fillRect(0,0,400,400);
             hCtx.clearRect(0,0,400,400);
 
-            // FIX: Draw the target using contain offsets
             const dims = getContainOffsets(targetImg, 400, 400);
             tCtx.drawImage(targetImg, dims.x, dims.y, dims.w, dims.h);
 
@@ -201,24 +197,33 @@
             const pData = gCtx.getImageData(0,0,400,400).data;
             const hData = hCtx.createImageData(400,400);
 
-            let targetInk = 0, hits = 0;
+            let targetInkPixels = 0;
+            let correctHits = 0;
+            let strayPixels = 0;
+
             for (let i = 0; i < tData.data.length; i += 4) {
                 const isTDark = ((tData.data[i] + tData.data[i+1] + tData.data[i+2])/3) < 160;
                 const isPDark = ((pData[i] + pData[i+1] + pData[i+2])/3) < 160;
                 
                 if (isTDark) {
-                    targetInk++;
+                    targetInkPixels++;
                     if (isPDark) {
-                        hits++;
+                        correctHits++;
                         hData.data[i] = 34; hData.data[i+1] = 197; hData.data[i+2] = 94; hData.data[i+3] = 200;
                     }
                 } else if (isPDark) {
+                    strayPixels++;
                     hData.data[i] = 239; hData.data[i+1] = 68; hData.data[i+2] = 68; hData.data[i+3] = 200;
                 }
             }
             hCtx.putImageData(hData, 0, 0);
-            const score = Math.floor((hits / Math.max(1, targetInk)) * 100);
-            showGrade(score);
+
+            // --- Penalized Scoring Math ---
+            let baseAccuracy = (correctHits / Math.max(1, targetInkPixels)) * 100;
+            let penalty = (strayPixels / Math.max(1, targetInkPixels)) * 50; 
+            const finalScore = Math.floor(Math.max(0, baseAccuracy - penalty));
+            
+            showGrade(finalScore);
         }
 
         function showGrade(score) {
@@ -227,19 +232,19 @@
             overlay.style.display = "flex";
 
             if (score < targetAccuracy) {
-                document.getElementById('grade-title').innerText = "FAILED";
+                document.getElementById('grade-title').innerText = "LOW PRECISION";
                 document.getElementById('grade-title').style.color = "var(--danger)";
                 document.getElementById('continue-btn').onclick = () => {
                     overlay.style.display = "none";
-                    gameOver(`Required ${targetAccuracy}%, but you got ${score}%`);
+                    gameOver(`Minimum ${targetAccuracy}% required. You scored ${score}%`);
                 };
             } else {
-                document.getElementById('grade-title').innerText = "SUCCESS!";
+                document.getElementById('grade-title').innerText = "CLEARED!";
                 document.getElementById('grade-title').style.color = "var(--success)";
                 saveToGallery(score);
                 photosCopied++;
                 totalAccuracyEarned += score;
-                targetAccuracy += 3;
+                targetAccuracy += 2; // Slower climb
                 
                 document.getElementById('continue-btn').onclick = () => {
                     overlay.style.display = "none";
@@ -266,7 +271,7 @@
         function gameOver(reason) {
             const avgAcc = photosCopied === 0 ? 0 : Math.floor(totalAccuracyEarned / photosCopied);
             document.getElementById('fail-message').innerText = reason;
-            document.getElementById('final-stats-text').innerHTML = `Cleared: ${photosCopied}<br>Average Acc: ${avgAcc}%`;
+            document.getElementById('final-stats-text').innerHTML = `Cleared: ${photosCopied}<br>Avg Precision: ${avgAcc}%`;
             document.getElementById('game-over-screen').style.display = "flex";
         }
 

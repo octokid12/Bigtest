@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Survival Trace: Arcade Edition</title>
+    <title>Survival Trace: Gallery Edition</title>
     <style>
         :root { --bg: #0f172a; --panel: #1e293b; --accent: #38bdf8; --danger: #ef4444; --success: #22c55e; }
         body { font-family: 'Segoe UI', system-ui, sans-serif; background-color: var(--bg); color: white; display: flex; flex-direction: column; align-items: center; padding: 20px; margin: 0; }
@@ -30,31 +30,34 @@
         button:active { transform: scale(0.95); }
         button:disabled { background: #475569; cursor: not-allowed; }
 
-        /* Game Over Overlay */
+        /* Gallery Section */
+        #gallery-section { width: 100%; max-width: 900px; margin-top: 40px; border-top: 1px solid #334155; padding-top: 20px; text-align: center; }
+        #gallery-container { display: grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); gap: 15px; margin-top: 20px; }
+        .gallery-item { background: var(--panel); padding: 10px; border-radius: 8px; border: 1px solid #334155; font-size: 0.8rem; }
+        .gallery-item img { width: 100%; border-radius: 4px; background: white; margin-bottom: 5px; }
+
+        /* Grade Overlay */
+        #grade-overlay {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0,0,0,0.9); z-index: 500;
+            display: none; flex-direction: column; justify-content: center; align-items: center;
+        }
+        .preview-stack { position: relative; width: 400px; height: 400px; background: white; border: 4px solid white; border-radius: 8px; margin-bottom: 20px; }
+        .preview-stack canvas { position: absolute; top: 0; left: 0; }
+
         #game-over-screen {
             position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-            background: rgba(15, 23, 42, 0.95); z-index: 1000;
+            background: rgba(15, 23, 42, 0.98); z-index: 1000;
             display: none; flex-direction: column; justify-content: center; align-items: center; text-align: center;
         }
-        .final-stats { font-size: 1.5rem; margin: 20px 0; line-height: 1.6; }
-        .fail-reason { color: var(--danger); font-weight: bold; margin-bottom: 20px; }
     </style>
 </head>
 <body>
 
     <div class="stats-bar">
-        <div class="stat-item">
-            <div class="stat-label">Time</div>
-            <p id="timer" class="stat-value">30s</p>
-        </div>
-        <div class="stat-item">
-            <div class="stat-label">Target</div>
-            <p id="target-acc-display" class="stat-value">20%</p>
-        </div>
-        <div class="stat-item">
-            <div class="stat-label">Completed</div>
-            <p id="count-display" class="stat-value">0</p>
-        </div>
+        <div class="stat-item"><div class="stat-label">Time</div><p id="timer" class="stat-value">30s</p></div>
+        <div class="stat-item"><div class="stat-label">Target</div><p id="target-acc-display" class="stat-value">20%</p></div>
+        <div class="stat-item"><div class="stat-label">Completed</div><p id="count-display" class="stat-value">0</p></div>
     </div>
 
     <div class="game-wrapper">
@@ -66,15 +69,30 @@
         <button id="action-btn" onclick="handleMainAction()">START GAME</button>
     </div>
 
+    <!-- The Grade Result Screen -->
+    <div id="grade-overlay">
+        <h2 id="grade-title">CHECKING...</h2>
+        <div class="preview-stack">
+            <canvas id="res-target-canvas" width="400" height="400"></canvas>
+            <canvas id="res-heat-canvas" width="400" height="400"></canvas>
+        </div>
+        <h2 id="grade-percent" style="color: var(--accent);">0%</h2>
+        <button id="continue-btn" onclick="closeOverlay()">CONTINUE</button>
+    </div>
+
     <div id="game-over-screen">
         <h1 style="font-size: 3rem; color: var(--danger);">GAME OVER</h1>
-        <p id="fail-message" class="fail-reason"></p>
-        <div class="final-stats" id="final-stats-text"></div>
-        <button onclick="location.reload()">TRY AGAIN</button>
+        <p id="fail-message" style="color: #94a3b8; font-size: 1.2rem;"></p>
+        <div id="final-stats-text" style="font-size: 1.5rem; margin: 20px 0;"></div>
+        <button onclick="location.reload()">RESTART CHALLENGE</button>
+    </div>
+
+    <div id="gallery-section">
+        <h3>Memory Gallery</h3>
+        <div id="gallery-container"></div>
     </div>
 
     <script>
-        // Photo Database - Add your URLs here!
         const PHOTO_DB = [
             "Assets/spoon.jpg",
             "Assets/money.png",
@@ -86,19 +104,12 @@
         const ctx = canvas.getContext('2d', { willReadFrequently: true });
         const targetImg = document.getElementById('target-photo');
         const actionBtn = document.getElementById('action-btn');
+        const galleryContainer = document.getElementById('gallery-container');
         
-        // Game State
-        let isDrawing = false, canDraw = false;
-        let lastX = 0, lastY = 0;
-        let timerId = null;
-        
-        // Survival Metrics
-        let currentLevel = 0;
-        let targetAccuracy = 20;
-        let photosCopied = 0;
-        let totalAccuracyEarned = 0;
-        let timeAllowed = 30;
-        const FADE_SPEED = 8; // Disappear in 8s
+        let isDrawing = false, canDraw = false, timerId = null;
+        let photosCopied = 0, totalAccuracyEarned = 0;
+        let targetAccuracy = 20, timeAllowed = 30;
+        const FADE_SPEED = 10;
 
         function init() {
             ctx.strokeStyle = "black";
@@ -116,12 +127,10 @@
         function startLevel() {
             canDraw = true;
             actionBtn.disabled = true;
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
             
-            // Pick Random Photo
-            const randomPhoto = PHOTO_DB[Math.floor(Math.random() * PHOTO_DB.length)];
-            targetImg.src = randomPhoto;
+            targetImg.src = PHOTO_DB[Math.floor(Math.random() * PHOTO_DB.length)];
 
-            // Difficulty Scaling every 4 copies
             if (photosCopied > 0 && photosCopied % 4 === 0) {
                 timeAllowed = Math.max(10, timeAllowed - 5);
             }
@@ -129,10 +138,7 @@
             let timeLeft = timeAllowed;
             document.getElementById('timer').innerText = timeLeft + "s";
             document.getElementById('target-acc-display').innerText = targetAccuracy + "%";
-            
-            ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-            // Trigger Fade
             targetImg.onload = () => {
                 targetImg.style.transition = "none";
                 targetImg.style.opacity = "1";
@@ -157,64 +163,114 @@
         }
 
         function processResults() {
-            const gradingCanvas = document.createElement('canvas');
-            gradingCanvas.width = 400; gradingCanvas.height = 400;
-            const gCtx = gradingCanvas.getContext('2d');
-            gCtx.fillStyle = "white";
-            gCtx.fillRect(0, 0, 400, 400);
+            const gCanvas = document.createElement('canvas');
+            gCanvas.width = 400; gCanvas.height = 400;
+            const gCtx = gCanvas.getContext('2d');
+            gCtx.fillStyle = "white"; gCtx.fillRect(0,0,400,400);
             gCtx.drawImage(canvas, 0, 0);
 
-            // Compare Logic (Simplified for brevity, keeping your accuracy logic)
-            const tCanvas = document.createElement('canvas');
-            tCanvas.width = 400; tCanvas.height = 400;
+            const tCanvas = document.getElementById('res-target-canvas');
+            const hCanvas = document.getElementById('res-heat-canvas');
             const tCtx = tCanvas.getContext('2d');
-            tCtx.drawImage(targetImg, 0, 0, 400, 400);
+            const hCtx = hCanvas.getContext('2d');
             
-            const tPixels = tCtx.getImageData(0, 0, 400, 400).data;
-            const pPixels = gCtx.getImageData(0, 0, 400, 400).data;
+            tCtx.drawImage(targetImg, 0, 0, 400, 400);
+            const tData = tCtx.getImageData(0,0,400,400);
+            const pData = gCtx.getImageData(0,0,400,400).data;
+            const hData = hCtx.createImageData(400,400);
 
             let targetInk = 0, hits = 0;
-            for (let i = 0; i < tPixels.length; i += 4) {
-                const isTDark = ((tPixels[i] + tPixels[i+1] + tPixels[i+2])/3) < 160;
-                const isPDark = ((pPixels[i] + pPixels[i+1] + pPixels[i+2])/3) < 160;
-                if (isTDark) targetInk++;
-                if (isTDark && isPDark) hits++;
+            for (let i = 0; i < tData.data.length; i += 4) {
+                const isTDark = ((tData.data[i] + tData.data[i+1] + tData.data[i+2])/3) < 160;
+                const isPDark = ((pData[i] + pData[i+1] + pData[i+2])/3) < 160;
+                
+                // Set target canvas to pure B&W for results
+                const val = isTDark ? 0 : 255;
+                tData.data[i] = tData.data[i+1] = tData.data[i+2] = val;
+                tData.data[i+3] = 255;
+
+                if (isTDark) {
+                    targetInk++;
+                    if (isPDark) {
+                        hits++;
+                        hData.data[i] = 34; hData.data[i+1] = 197; hData.data[i+2] = 94; hData.data[i+3] = 200; // Green hit
+                    }
+                } else if (isPDark) {
+                    hData.data[i] = 239; hData.data[i+1] = 68; hData.data[i+2] = 68; hData.data[i+3] = 200; // Red miss
+                }
             }
+            tCtx.putImageData(tData, 0, 0);
+            hCtx.putImageData(hData, 0, 0);
 
             const currentAccuracy = Math.floor((hits / targetInk) * 100);
+            showGrade(currentAccuracy);
+        }
+
+        function showGrade(score) {
+            const overlay = document.getElementById('grade-overlay');
+            const title = document.getElementById('grade-title');
+            const percent = document.getElementById('grade-percent');
             
-            if (currentAccuracy < targetAccuracy) {
-                gameOver(`You needed ${targetAccuracy}%, but only got ${currentAccuracy}%`);
+            percent.innerText = score + "%";
+            overlay.style.display = "flex";
+
+            if (score < targetAccuracy) {
+                title.innerText = "ACCURACY TOO LOW";
+                title.style.color = "var(--danger)";
+                document.getElementById('continue-btn').onclick = () => {
+                    overlay.style.display = "none";
+                    gameOver(`Required ${targetAccuracy}%, but you got ${score}%`);
+                };
             } else {
-                // Success - Scale Up
-                photosCopied++;
-                totalAccuracyEarned += currentAccuracy;
-                targetAccuracy += 3; // Increase target by 3% each time
+                title.innerText = "STAGE CLEAR!";
+                title.style.color = "var(--success)";
+                saveToGallery(score);
                 
-                document.getElementById('count-display').innerText = photosCopied;
-                actionBtn.disabled = false;
-                actionBtn.innerText = "NEXT LEVEL";
+                photosCopied++;
+                totalAccuracyEarned += score;
+                targetAccuracy += 3;
+                
+                document.getElementById('continue-btn').onclick = () => {
+                    overlay.style.display = "none";
+                    document.getElementById('count-display').innerText = photosCopied;
+                    actionBtn.innerText = "NEXT LEVEL";
+                    actionBtn.disabled = false;
+                };
             }
+        }
+
+        function saveToGallery(score) {
+            const combined = document.createElement('canvas');
+            combined.width = 400; combined.height = 400;
+            const cCtx = combined.getContext('2d');
+            cCtx.fillStyle = "white"; cCtx.fillRect(0,0,400,400);
+            cCtx.drawImage(document.getElementById('res-target-canvas'), 0, 0);
+            cCtx.drawImage(document.getElementById('res-heat-canvas'), 0, 0);
+
+            const item = document.createElement('div');
+            item.className = 'gallery-item';
+            item.innerHTML = `<img src="${combined.toDataURL()}"><span>Score: ${score}%</span>`;
+            galleryContainer.prepend(item);
+        }
+
+        function closeOverlay() {
+            document.getElementById('grade-overlay').style.display = "none";
         }
 
         function gameOver(reason) {
             const avgAcc = photosCopied === 0 ? 0 : Math.floor(totalAccuracyEarned / photosCopied);
             document.getElementById('fail-message').innerText = reason;
-            document.getElementById('final-stats-text').innerHTML = `
-                Photos Traced: ${photosCopied}<br>
-                Average Accuracy: ${avgAcc}%
-            `;
+            document.getElementById('final-stats-text').innerHTML = `Completed: ${photosCopied}<br>Avg Accuracy: ${avgAcc}%`;
             document.getElementById('game-over-screen').style.display = "flex";
         }
 
-        // Coordinate logic from previous fix
+        // --- Standard Mouse/Touch Utils ---
         function getPos(e) {
             const rect = canvas.getBoundingClientRect();
             const x = (e.touches ? e.touches[0].clientX : e.clientX) - rect.left;
             const y = (e.touches ? e.touches[0].clientY : e.clientY) - rect.top;
             return { x: x * (canvas.width / rect.width), y: y * (canvas.height / rect.height) };
         }
-
         function start(e) { if (!canDraw) return; isDrawing = true; const pos = getPos(e); [lastX, lastY] = [pos.x, pos.y]; }
         function draw(e) {
             if (!isDrawing || !canDraw) return;
@@ -223,7 +279,6 @@
             [lastX, lastY] = [pos.x, pos.y];
             if(e.touches) e.preventDefault();
         }
-
         canvas.addEventListener('mousedown', start);
         canvas.addEventListener('mousemove', draw);
         window.addEventListener('mouseup', () => isDrawing = false);

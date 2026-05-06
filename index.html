@@ -236,7 +236,7 @@
                 document.getElementById('grade-title').style.color = "var(--danger)";
                 document.getElementById('continue-btn').onclick = () => {
                     overlay.style.display = "none";
-                    gameOver(`you FAIL!!!!!!! Minimum ${targetAccuracy}% required. You scored ${score}%`);
+                    gameOver(`you FAIL!!!!!!! Minimum ${targetAccuracy}% required. You scored ${score}% (your base score was ${baseAccuracy} and the penalty was ${penalty}`);
                 };
             } else {
                 document.getElementById('grade-title').innerText = "CLEARED!!!";
